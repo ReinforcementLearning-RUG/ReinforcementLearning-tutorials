@@ -25,3 +25,6 @@ def run_random_gymnasium_loop(env_name, num_timesteps):
     # Close the environment
     env.close()
     MetricsTracker().plot_rewards("RANDOM")
+
+if __name__ == "__main__":
+    run_random_gymnasium_loop("ALE/DonkeyKong-v5", int(1e6))

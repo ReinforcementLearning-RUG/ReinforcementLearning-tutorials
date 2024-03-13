@@ -10,20 +10,14 @@ from notebooks.util.welford import Welford
 
 class MetricsTracker:
     """
-    Thread-safe object for recording metrics. Slight abuse of the Singleton pattern similar
-    to how a logging object is designed.
+    Thread-safe object for recording metrics.
     """
-    _instance = None
-
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super().__new__(cls)
-            cls._instance._lock = threading.Lock()
-            cls._loss_aggr = Welford()
-            cls._reward_aggr = Welford()
-            cls._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
-            cls._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
-        return cls._instance
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._loss_aggr = Welford()
+        self._reward_aggr = Welford()
+        self._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
+        self._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
 
     def to_csv(self, filename: str) -> None:
         """

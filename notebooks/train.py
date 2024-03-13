@@ -71,7 +71,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
                     if self.verbose > 0:
                         print(f"Saving new best model to {self.save_path}.zip")
                     self.model.save(self.save_path)
-                    self.tracker.plot_rewards()
+                    self.tracker.plot_rewards(self.save_path + self.agent_id + "rewards.png")
 
         return True
 
@@ -79,7 +79,7 @@ class SaveOnBestTrainingRewardCallback(BaseCallback):
         """
         This event is triggered before exiting the `learn()` method.
         """
-        self.tracker.plot_rewards()
+        self.tracker.plot_rewards(self.save_path + self.agent_id + "rewards.png")
     
 if __name__ == "__main__":
     # Create log dir
@@ -106,4 +106,4 @@ if __name__ == "__main__":
         optimize_memory_usage=False
     )
     model.learn(total_timesteps=1e6, callback=SaveOnBestTrainingRewardCallback(check_freq=1000, log_dir=log_directory))    # If you are training for a long time I would do it in a source file and not a jupyter notebook.
-    model.save("dqn_trained_dk")
+    # model.save("dqn_trained_dk_new")
