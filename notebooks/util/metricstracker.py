@@ -5,7 +5,7 @@ from collections import defaultdict
 import numpy as np
 from matplotlib import pyplot as plt
 
-from util.welford import Welford
+from notebooks.util.welford import Welford
 
 
 class MetricsTracker:
@@ -13,13 +13,17 @@ class MetricsTracker:
     Thread-safe object for recording metrics. Slight abuse of the Singleton pattern similar
     to how a logging object is designed.
     """
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._loss_aggr = Welford()
-        self._reward_aggr = Welford()
-        self._loss_history = defaultdict(lambda: ([], []))
-        self._reward_history = defaultdict(lambda: ([], []))
+    _instance = None
 
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._lock = threading.Lock()
+            cls._loss_aggr = Welford()
+            cls._reward_aggr = Welford()
+            cls._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
+            cls._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
+        return cls._instance
 
     def to_csv(self, filename: str) -> None:
         """
@@ -61,11 +65,34 @@ class MetricsTracker:
 
             axes[1].set_title('Reward History')
             axes[1].set_xlabel('Time steps')
-            axes[1].set_ylabel('Average Reward')
+            axes[1].set_ylabel('Average Return')
             axes[1].legend()
 
             plt.tight_layout()
             plt.show()
+
+    def plot_rewards(self, filename="returns.png"):
+        # Code duplication I know.
+        with self._lock:
+            fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(10, 8))
+
+            for agent_id, (mean_rewards, var_rewards) in self._reward_history.items():
+                x_reward = np.linspace(0, len(mean_rewards), len(mean_rewards), endpoint=False)
+                axes.plot(x_reward, mean_rewards, label=f'{agent_id} returns')
+                axes.fill_between(x_reward,
+                                  mean_rewards - np.sqrt(var_rewards) * 0.1,
+                                  mean_rewards + np.sqrt(var_rewards) * 0.1,
+                                  alpha=0.2)
+
+            axes.set_title('Reward History')
+            axes.set_xlabel('Episodes')
+            axes.set_ylabel('Average Return')
+            axes.legend()
+            axes.grid(True)
+
+            plt.tight_layout()
+            plt.savefig(filename)
+            # plt.show()
 
     def record_loss(self, agent_id: str, loss: float) -> None:
         """
