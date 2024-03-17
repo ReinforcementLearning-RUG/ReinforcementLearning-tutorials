@@ -11,7 +11,7 @@ Repository containing reinforcement learning code.
 
 ## Getting started
 
-You can run the notebooks through google colab. Alternatively you can clone the repository and set up a local virtual environment (described below).
+You can run the notebooks through google colab. Alternatively you can clone the repository and set up a local virtual environment.
 
 ### Prerequisites
 
