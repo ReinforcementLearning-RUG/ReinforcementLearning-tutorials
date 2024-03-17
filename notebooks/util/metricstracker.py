@@ -10,14 +10,21 @@ from notebooks.util.welford import Welford
 
 class MetricsTracker:
     """
-    Thread-safe object for recording metrics.
+    Singleton thread-safe object for recording metrics.
     """
-    def __init__(self):
-        self._lock = threading.Lock()
-        self._loss_aggr: Dict[str, Welford] = {}
-        self._reward_aggr: Dict[str, Welford] = {}
-        self._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
-        self._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
+    _instance = None
+    _lock = threading.Lock()
+
+    def __new__(cls):
+        if cls._instance is None:
+            with cls._lock:
+                if cls._instance is None:
+                    cls._instance = super().__new__(cls)
+                    cls._instance._loss_aggr: Dict[str, Welford] = {} # type: ignore
+                    cls._instance._reward_aggr: Dict[str, Welford] = {} # type: ignore
+                    cls._instance._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], [])) # type: ignore
+                    cls._instance._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], [])) # type: ignore
+        return cls._instance
 
     def to_csv(self, filename: str) -> None:
         """
@@ -101,7 +108,7 @@ class MetricsTracker:
             
             self._loss_aggr[agent_id].update_aggr(loss)
             mean_losses, variance_losses = self._loss_history[agent_id]
-            mean, var = self._loss_aggr.get_curr_mean_variance()
+            mean, var = self._loss_aggr[agent_id].get_curr_mean_variance()
             mean_losses.append(mean)
             variance_losses.append(var)
 
@@ -119,7 +126,7 @@ class MetricsTracker:
 
             self._reward_aggr[agent_id].update_aggr(reward)
             mean_rewards, variance_rewards = self._reward_history[agent_id]
-            mean, var = self._reward_aggr.get_curr_mean_variance()
+            mean, var = self._reward_aggr[agent_id].get_curr_mean_variance()
             mean_rewards.append(mean)
             variance_rewards.append(var)
 
