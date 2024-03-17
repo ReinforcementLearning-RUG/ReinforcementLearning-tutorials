@@ -14,8 +14,8 @@ class MetricsTracker:
     """
     def __init__(self):
         self._lock = threading.Lock()
-        self._loss_aggr = Welford()
-        self._reward_aggr = Welford()
+        self._loss_aggr: Dict[str, Welford] = {}
+        self._reward_aggr: Dict[str, Welford] = {}
         self._loss_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
         self._reward_history: Dict[str, tuple] = defaultdict(lambda: ([], []))
 
@@ -96,7 +96,10 @@ class MetricsTracker:
         :param loss: The loss value to record.
         """
         with self._lock:
-            self._loss_aggr.update_aggr(loss)
+            if agent_id not in self._loss_aggr:
+                self._loss_aggr[agent_id] = Welford()
+            
+            self._loss_aggr[agent_id].update_aggr(loss)
             mean_losses, variance_losses = self._loss_history[agent_id]
             mean, var = self._loss_aggr.get_curr_mean_variance()
             mean_losses.append(mean)
@@ -105,12 +108,16 @@ class MetricsTracker:
     def record_reward(self, agent_id: str, reward: Union[float, int, SupportsFloat]) -> None:
         """
         Record a reward value for a specific agent.
+        Problem: Code duplication with record_X methods.
 
         :param agent_id: The identifier of the agent.
         :param reward: The reward value to record.
         """
         with self._lock:
-            self._reward_aggr.update_aggr(reward)
+            if agent_id not in self._reward_aggr:
+                self._reward_aggr[agent_id] = Welford()
+
+            self._reward_aggr[agent_id].update_aggr(reward)
             mean_rewards, variance_rewards = self._reward_history[agent_id]
             mean, var = self._reward_aggr.get_curr_mean_variance()
             mean_rewards.append(mean)
